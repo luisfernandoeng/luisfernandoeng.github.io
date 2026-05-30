@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luís Fernando — Engenharia & Automação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@300;500;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #0f1215;
+    --bg3: #141820;
+    --panel: #111518;
+    --border: #1e2530;
+    --border2: #2a3340;
+    --yellow: #f5c518;
+    --yellow2: #ffd84d;
+    --yellow-dim: rgba(245,197,24,0.10);
+    --yellow-glow: rgba(245,197,24,0.3);
+    --blue: #3d8ef0;
+    --blue-dim: rgba(61,142,240,0.1);
+    --text: #c8d4e0;
+    --text2: #8899aa;
+    --text3: #556677;
+    --white: #e8f0f8;
+    --red: #e05050;
+    --green: #4caf7d;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 400;
+    overflow-x: hidden;
+  }
+
+  /* NOISE */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: 0.5;
+  }
+
+  /* CANVAS BG */
+  #bg-canvas {
+    position: fixed; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* CURSOR GLOW */
+  .cursor-glow {
+    position: fixed;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,197,24,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s;
+  }
+
+  /* WRAPPER */
+  .wrapper {
+    position: relative; z-index: 2;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,12,15,0.88);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .nav-logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem; color: var(--yellow);
+    letter-spacing: 0.05em; text-decoration: none;
+  }
+  .nav-logo span { color: var(--text3); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    font-family: 'Space Mono', monospace; font-size: 0.7rem;
+    color: var(--text2); text-decoration: none;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--yellow); }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex; gap: 2rem; padding: 0.5rem 2rem;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    font-family: 'Space Mono', monospace; font-size: 0.65rem;
+    color: var(--text3); letter-spacing: 0.06em; overflow: hidden;
+    position: relative; z-index: 2;
+  }
+  .status-item { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  .dot-yellow { background: var(--yellow); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* HERO */
+  .hero { padding: 6rem 0 4rem; position: relative; }
+  .hero-label {
+    font-family: 'Space Mono', monospace; font-size: 0.7rem;
+    color: var(--yellow); letter-spacing: 0.15em; text-transform: uppercase;
+    margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;
+  }
+  .hero-label::before { content:''; display:block; width:32px; height:1px; background:var(--yellow); }
+  .hero-name {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+    font-size: clamp(3.5rem, 8vw, 7rem); line-height: 0.9;
+    color: var(--white); letter-spacing: -0.02em; margin-bottom: 0.5rem;
+  }
+  .hero-name .accent { color: var(--yellow); }
+  .hero-role {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 300;
+    font-size: clamp(1.4rem, 3vw, 2.2rem); color: var(--text2);
+    letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2rem;
+  }
+  .hero-desc {
+    max-width: 520px; font-size: 1rem; line-height: 1.7;
+    color: var(--text2); margin-bottom: 3rem;
+  }
+  .hero-badges { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 3rem; }
+  .badge {
+    padding: 0.3rem 0.8rem; border: 1px solid var(--border2);
+    background: var(--bg3); border-radius: 3px;
+    font-family: 'Space Mono', monospace; font-size: 0.65rem;
+    color: var(--text2); letter-spacing: 0.05em; transition: all 0.2s;
+  }
+  .badge:hover, .badge.active { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-dim); }
+  .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.7rem 1.5rem;
+    font-family: 'Space Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    text-decoration: none; border-radius: 3px;
+    transition: all 0.2s; cursor: pointer; border: none;
+  }
+  .btn-primary { background: var(--yellow); color: #0a0c0f; font-weight: 700; }
+  .btn-primary:hover { background: var(--yellow2); box-shadow: 0 0 28px var(--yellow-glow); }
+  .btn-secondary { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+  .btn-secondary:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  /* SECTION DIVIDER */
+  .section-divider {
+    display: flex; align-items: center; gap: 1rem;
+    margin: 4rem 0 2.5rem;
+  }
+  .section-divider::before, .section-divider::after {
+    content:''; flex:1; height:1px; background: var(--border);
+  }
+  .section-tag {
+    font-family: 'Space Mono', monospace; font-size: 0.65rem;
+    color: var(--text3); letter-spacing: 0.15em; text-transform: uppercase;
+    white-space: nowrap; padding: 0.2rem 0.6rem;
+    border: 1px solid var(--border); border-radius: 2px;
+  }
+
+  /* PROJECTS GRID */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5px; background: var(--border);
+    border: 1px solid var(--border); border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .project-card {
+    background: var(--panel);
+    padding: 1.75rem;
+    text-decoration: none;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; gap: 0.75rem;
+    min-height: 200px;
+    transition: background 0.3s;
+    cursor: pointer;
+  }
+  .project-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background: var(--border2); transition: all 0.3s;
+  }
+  .project-card::after {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(245,197,24,0.06) 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .project-card:hover { background: var(--bg3); }
+  .project-card:hover::before { background: var(--yellow); box-shadow: 0 0 10px var(--yellow-glow); }
+  .project-card:hover::after { opacity: 1; }
+  .project-card.featured::before { background: var(--yellow); box-shadow: 0 0 10px var(--yellow-glow); }
+
+  /* card entrance animation */
+  .project-card {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: background 0.3s, opacity 0.5s ease, transform 0.5s ease;
+  }
+  .project-card.visible { opacity: 1; transform: translateY(0); }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+  .card-icon { font-size: 1.5rem; line-height: 1; }
+  .card-type {
+    font-family: 'Space Mono', monospace; font-size: 0.6rem;
+    color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.2rem 0.5rem; border: 1px solid var(--border2); border-radius: 2px;
+  }
+  .card-type.web { border-color: rgba(61,142,240,0.4); color: var(--blue); }
+  .card-type.plugin { border-color: rgba(245,197,24,0.4); color: var(--yellow); }
+  .card-type.lib { border-color: rgba(76,175,125,0.4); color: var(--green); }
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 1.2rem; color: var(--white); letter-spacing: 0.02em; line-height: 1.2;
+  }
+  .card-desc { font-size: 0.85rem; color: var(--text2); line-height: 1.6; flex: 1; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .tag {
+    font-family: 'Space Mono', monospace; font-size: 0.58rem;
+    color: var(--text3); letter-spacing: 0.05em;
+    background: var(--bg2); padding: 0.15rem 0.4rem; border-radius: 2px;
+  }
+  .card-meta {
+    font-family: 'Space Mono', monospace; font-size: 0.6rem;
+    color: var(--text3); display: flex; align-items: center; gap: 0.75rem;
+    flex-shrink: 0; margin-left: 0.5rem;
+  }
+  .card-meta span { display: flex; align-items: center; gap: 0.25rem; }
+  .card-arrow {
+    position: absolute; bottom: 1.5rem; right: 1.5rem;
+    color: var(--text3); font-size: 0.8rem;
+    transition: all 0.2s; font-family: 'Space Mono', monospace;
+  }
+  .project-card:hover .card-arrow { color: var(--yellow); transform: translate(3px, -3px); }
+
+  /* REPO UPDATED */
+  .repo-updated {
+    font-family: 'Space Mono', monospace; font-size: 0.58rem;
+    color: var(--text3); margin-top: 0.5rem;
+    display: flex; align-items: center; gap: 0.3rem;
+  }
+  .repo-updated .live-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--green); animation: pulse 2s infinite;
+    flex-shrink: 0;
+  }
+
+  /* ABOUT + STACK */
+  .about-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.5px; background: var(--border);
+    border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  }
+  @media (max-width: 680px) { .about-grid { grid-template-columns: 1fr; } }
+  .about-cell { background: var(--panel); padding: 2rem; }
+  .cell-label {
+    font-family: 'Space Mono', monospace; font-size: 0.65rem;
+    color: var(--yellow); letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .cell-label::after { content:''; flex:1; height:1px; background: var(--border2); }
+  .about-text { font-size: 0.9rem; line-height: 1.75; color: var(--text2); }
+  .about-text strong { color: var(--white); font-weight: 500; }
+
+  .stack-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .stack-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0.75rem; background: var(--bg2); border-radius: 3px;
+    border-left: 2px solid var(--border2); transition: border-color 0.2s;
+  }
+  .stack-item:hover { border-left-color: var(--yellow); }
+  .stack-name { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--text); }
+  .stack-level { display: flex; gap: 3px; }
+  .level-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); }
+  .level-dot.on { background: var(--yellow); }
+
+  /* CONTACT */
+  .contact-strip {
+    border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 0; background: var(--border);
+  }
+  @media (max-width: 640px) { .contact-strip { grid-template-columns: 1fr; } }
+  .contact-main { background: var(--panel); padding: 2.5rem; }
+  .contact-title {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 2rem; color: var(--white); margin-bottom: 0.5rem;
+  }
+  .contact-sub { font-size: 0.9rem; color: var(--text2); margin-bottom: 2rem; max-width: 400px; }
+  .contact-links { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .contact-side {
+    background: var(--bg2); padding: 2.5rem;
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 1rem; min-width: 200px;
+  }
+  .contact-stat { text-align: center; }
+  .stat-num {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+    font-size: 2.5rem; color: var(--yellow); line-height: 1;
+  }
+  .stat-label {
+    font-family: 'Space Mono', monospace; font-size: 0.6rem;
+    color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.3rem;
+  }
+
+  /* TERMINAL */
+  .terminal {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 4px; overflow: hidden; margin-bottom: 2rem;
+  }
+  .terminal-bar {
+    background: var(--bg3); padding: 0.5rem 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .t-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .t-red{background:#e05050} .t-yellow{background:var(--yellow)} .t-green{background:var(--green)}
+  .terminal-filename { margin-left:auto; font-family:'Space Mono',monospace; font-size:0.6rem; color:var(--text3); }
+  .terminal-body {
+    padding: 1.25rem 1.5rem;
+    font-family: 'Space Mono', monospace; font-size: 0.75rem;
+    line-height: 1.9; color: var(--text2);
+  }
+  .t-comment{color:var(--text3)} .t-key{color:var(--blue)} .t-val{color:var(--yellow)} .t-str{color:var(--green)} .t-sym{color:var(--text3)}
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border); padding: 2rem; margin-top: 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem; position: relative; z-index: 2;
+  }
+  .footer-left { font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--text3); letter-spacing:0.06em; }
+  .footer-left span { color: var(--yellow); }
+  .footer-right { font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--text3); }
+
+  /* FADE UP */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation: fadeUp 0.6s ease forwards; opacity: 0; }
+  .fade-up:nth-child(1){animation-delay:0.1s}
+  .fade-up:nth-child(2){animation-delay:0.2s}
+  .fade-up:nth-child(3){animation-delay:0.3s}
+  .fade-up:nth-child(4){animation-delay:0.4s}
+  .fade-up:nth-child(5){animation-delay:0.5s}
+
+  /* HERO DECORATION */
+  .hero-decoration {
+    position: absolute; top: 0; right: 0;
+    width: 400px; height: 400px;
+    overflow: hidden; opacity: 0.25; pointer-events: none;
+  }
+
+  /* LOADING SKELETON */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg2) 25%, var(--border) 50%, var(--bg2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 2px; height: 0.75em;
+    display: inline-block; min-width: 80px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* SCROLL PROGRESS */
+  .scroll-progress {
+    position: fixed; top: 0; left: 0; height: 2px;
+    background: var(--yellow); z-index: 200;
+    box-shadow: 0 0 8px var(--yellow-glow);
+    transition: width 0.1s;
+  }
+
+  /* HOVER FLOAT */
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+</style>
+</head>
+<body>
+
+<!-- SCROLL PROGRESS -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- CURSOR GLOW -->
+<div class="cursor-glow" id="cursorGlow"></div>
+
+<!-- ANIMATED BG CANVAS -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">LF<span>/</span>ENG</a>
+    <ul class="nav-links">
+      <li><a href="#projetos">Projetos</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#contato">Contato</a></li>
+      <li><a href="https://github.com/luisfernandoeng" target="_blank">GitHub ↗</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="status-item"><div class="dot"></div> SISTEMA ONLINE</div>
+  <div class="status-item"><div class="dot dot-yellow"></div> LF LABS v2.0</div>
+  <div class="status-item">RIBEIRÃO PRETO · SP</div>
+  <div class="status-item">REVIT API · PYTHON · BIM</div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrapper">
+    <div class="hero-decoration">
+      <svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="300" cy="100" r="80" stroke="#1e2530" stroke-width="1"/>
+        <circle cx="300" cy="100" r="50" stroke="#2a3340" stroke-width="1"/>
+        <circle cx="300" cy="100" r="20" stroke="#f5c518" stroke-width="1" stroke-dasharray="4 4">
+          <animateTransform attributeName="transform" type="rotate" from="0 300 100" to="360 300 100" dur="20s" repeatCount="indefinite"/>
+        </circle>
+        <line x1="300" y1="0" x2="300" y2="400" stroke="#1e2530" stroke-width="1"/>
+        <line x1="100" y1="100" x2="400" y2="100" stroke="#1e2530" stroke-width="1"/>
+        <line x1="220" y1="100" x2="180" y2="140" stroke="#2a3340" stroke-width="1"/>
+        <rect x="160" y="135" width="40" height="20" stroke="#2a3340" stroke-width="1" fill="none"/>
+        <line x1="160" y1="145" x2="120" y2="145" stroke="#2a3340" stroke-width="1"/>
+        <circle cx="115" cy="145" r="5" stroke="#f5c518" stroke-width="1" fill="none">
+          <animate attributeName="opacity" values="1;0.2;1" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <line x1="380" y1="100" x2="380" y2="200" stroke="#2a3340" stroke-width="1"/>
+        <rect x="370" y="200" width="20" height="40" stroke="#2a3340" stroke-width="1" fill="none"/>
+        <line x1="380" y1="240" x2="380" y2="300" stroke="#2a3340" stroke-width="1"/>
+        <text x="290" y="105" font-family="monospace" font-size="8" fill="#556677">GND</text>
+        <text x="255" y="90" font-family="monospace" font-size="8" fill="#3d8ef0">VCC</text>
+      </svg>
+    </div>
+    <div class="fade-up"><div class="hero-label">Formado em Engenharia Elétrica</div></div>
+    <div class="fade-up"><h1 class="hero-name">LUÍS<br><span class="accent">FERNANDO</span></h1></div>
+    <div class="fade-up"><div class="hero-role">Automação · BIM · Desenvolvimento</div></div>
+    <div class="fade-up">
+      <p class="hero-desc">
+        Uso código para eliminar trabalho repetitivo de projetos elétricos.
+        Plugins para Revit, ferramentas web de dimensionamento e bibliotecas open source —
+        tudo documentado no <strong>LF LABS</strong>.
+      </p>
+    </div>
+    <div class="fade-up">
+      <div class="hero-badges">
+        <span class="badge active">pyRevit</span>
+        <span class="badge">Revit API</span>
+        <span class="badge">Python</span>
+        <span class="badge">IFC / BIM</span>
+        <span class="badge">Dynamo</span>
+        <span class="badge">NBR 5410</span>
+        <span class="badge">SPDA</span>
+        <span class="badge">WEF Young Leader</span>
+      </div>
+      <div class="hero-cta">
+        <a href="https://github.com/luisfernandoeng/LF_LABS" target="_blank" class="btn btn-primary">⚡ Ver LF LABS</a>
+        <a href="https://www.linkedin.com/in/lu%C3%ADsfernand2/" target="_blank" class="btn btn-secondary">LinkedIn ↗</a>
+        <a href="#projetos" class="btn btn-secondary">Projetos ↓</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TERMINAL -->
+<section>
+  <div class="wrapper">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="t-dot t-red"></div>
+        <div class="t-dot t-yellow"></div>
+        <div class="t-dot t-green"></div>
+        <span class="terminal-filename">luisfernando.json</span>
+      </div>
+      <div class="terminal-body">
+        <span class="t-sym">{</span><br>
+        &nbsp;&nbsp;<span class="t-key">"nome"</span><span class="t-sym">:</span> <span class="t-str">"Luís Fernando"</span><span class="t-sym">,</span><br>
+        &nbsp;&nbsp;<span class="t-key">"especialidade"</span><span class="t-sym">:</span> <span class="t-str">"Sistemas Elétricos &amp; Automação BIM"</span><span class="t-sym">,</span><br>
+        &nbsp;&nbsp;<span class="t-key">"missão"</span><span class="t-sym">:</span> <span class="t-str">"Eliminar trabalho repetitivo na engenharia com código"</span><span class="t-sym">,</span><br>
+        &nbsp;&nbsp;<span class="t-key">"projetos"</span><span class="t-sym">:</span> <span class="t-val">["LF_LABS", "consulta_ng_spda", "dimensao_eletroduto", "BCFtoExcel", "IFCleaner", "IFCtoexcel"]</span><span class="t-sym">,</span><br>
+        &nbsp;&nbsp;<span class="t-key">"comunidade"</span><span class="t-sym">:</span> <span class="t-str">"Global Shapers · WEF Young Leader · Ribeirão Preto Hub"</span><br>
+        <span class="t-sym">}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projetos">
+  <div class="wrapper">
+    <div class="section-divider"><span class="section-tag">// projetos</span></div>
+    <div class="projects-grid" id="projects-grid">
+
+      <a href="https://github.com/luisfernandoeng/LF_LABS" target="_blank" class="project-card featured" data-repo="LF_LABS">
+        <div class="card-header">
+          <span class="card-icon">⚡</span>
+          <span class="card-type plugin">Plugin</span>
+        </div>
+        <div class="card-title">LF LABS</div>
+        <div class="card-desc">Biblioteca open source de plugins pyRevit para automação de projetos elétricos. Quadros de cargas, circuitos, quantitativos e exportação automatizada.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag">pyRevit</span><span class="tag">Python</span><span class="tag">Revit API</span>
+          </div>
+          <div class="card-meta">
+            <span>★ <span class="repo-stars">–</span></span>
+          </div>
+        </div>
+        <div class="repo-updated"><div class="live-dot"></div><span class="repo-date">carregando...</span></div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a href="https://github.com/luisfernandoeng/dimensao_eletroduto_eletrocalha" target="_blank" class="project-card" data-repo="dimensao_eletroduto_eletrocalha">
+        <div class="card-header">
+          <span class="card-icon">🔌</span>
+          <span class="card-type web">Web</span>
+        </div>
+        <div class="card-title">Dimensionador de Eletrodutos</div>
+        <div class="card-desc">Ferramenta web para dimensionamento de eletrodutos e eletrocalhas conforme NBR 5410. Calcula bitolas, taxa de ocupação e gera relatório.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag">NBR 5410</span><span class="tag">JavaScript</span><span class="tag">Web</span>
+          </div>
+          <div class="card-meta">
+            <span>★ <span class="repo-stars">–</span></span>
+          </div>
+        </div>
+        <div class="repo-updated"><div class="live-dot"></div><span class="repo-date">carregando...</span></div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a href="https://github.com/luisfernandoeng/consulta_ng_spda" target="_blank" class="project-card" data-repo="consulta_ng_spda">
+        <div class="card-header">
+          <span class="card-icon">⛈️</span>
+          <span class="card-type web">Web</span>
+        </div>
+        <div class="card-title">Consulta de Descargas Atmosféricas</div>
+        <div class="card-desc">Plataforma de consulta de índice ceráunico e dados de descargas atmosféricas por localidade, apoio ao dimensionamento de SPDA conforme NBR 5419.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag">NBR 5419</span><span class="tag">SPDA</span><span class="tag">API</span>
+          </div>
+          <div class="card-meta">
+            <span>★ <span class="repo-stars">–</span></span>
+          </div>
+        </div>
+        <div class="repo-updated"><div class="live-dot"></div><span class="repo-date">carregando...</span></div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a href="https://github.com/luisfernandoeng/BCFtoExcel" target="_blank" class="project-card" data-repo="BCFtoExcel">
+        <div class="card-header">
+          <span class="card-icon">📋</span>
+          <span class="card-type lib">Lib</span>
+        </div>
+        <div class="card-title">BCF to Excel</div>
+        <div class="card-desc">Extração e conversão de issues BCF (BIM Collaboration Format) para planilhas Excel. Facilita o gerenciamento de compatibilizações entre disciplinas.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag">BCF</span><span class="tag">Python</span><span class="tag">BIM</span>
+          </div>
+          <div class="card-meta">
+            <span>★ <span class="repo-stars">–</span></span>
+          </div>
+        </div>
+        <div class="repo-updated"><div class="live-dot"></div><span class="repo-date">carregando...</span></div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a href="https://github.com/luisfernandoeng/IFCleaner" target="_blank" class="project-card" data-repo="IFCleaner">
+        <div class="card-header">
+          <span class="card-icon">🧹</span>
+          <span class="card-type lib">Lib</span>
+        </div>
+        <div class="card-title">IFCleaner</div>
+        <div class="card-desc">Limpeza e otimização de arquivos IFC. Remove elementos desnecessários, corrige geometrias e reduz o tamanho de modelos para compartilhamento e análise.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag">IFC</span><span class="tag">Python</span><span class="tag">IfcOpenShell</span>
+          </div>
+          <div class="card-meta">
+            <span>★ <span class="repo-stars">–</span></span>
+          </div>
+        </div>
+        <div class="repo-updated"><div class="live-dot"></div><span class="repo-date">carregando...</span></div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+      <a href="https://github.com/luisfernandoeng/IFCtoexcel" target="_blank" class="project-card" data-repo="IFCtoexcel">
+        <div class="card-header">
+          <span class="card-icon">📐</span>
+          <span class="card-type lib">Lib</span>
+        </div>
+        <div class="card-title">IFC to Excel</div>
+        <div class="card-desc">Extração de dados de modelos IFC diretamente para planilhas. Comprimentos de eletrodutos e tubulações exportados para quantitativos de obra.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag">IFC</span><span class="tag">Python</span><span class="tag">Excel</span>
+          </div>
+          <div class="card-meta">
+            <span>★ <span class="repo-stars">–</span></span>
+          </div>
+        </div>
+        <div class="repo-updated"><div class="live-dot"></div><span class="repo-date">carregando...</span></div>
+        <span class="card-arrow">↗</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT + STACK -->
+<section id="stack">
+  <div class="wrapper">
+    <div class="section-divider"><span class="section-tag">// sobre &amp; stack</span></div>
+    <div class="about-grid">
+      <div class="about-cell">
+        <div class="cell-label">Sobre</div>
+        <p class="about-text">
+          Formado em <strong>Engenharia Elétrica</strong>, foco em sistemas elétricos e automação de processos BIM.
+          Acredito que tarefas repetitivas são oportunidades de automação —
+          cada script liberado é tempo devolvido para decisões que realmente importam.<br><br>
+          Membro do <strong>Global Shapers Hub Ribeirão Preto</strong>, iniciativa do Fórum Econômico Mundial.
+          Trabalho em projetos de impacto social nas áreas de sustentabilidade, educação financeira e tecnologia acessível.
+        </p>
+      </div>
+      <div class="about-cell">
+        <div class="cell-label">Stack</div>
+        <div class="stack-list">
+          <div class="stack-item"><span class="stack-name">Python / pyRevit</span><div class="stack-level"><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div></div></div>
+          <div class="stack-item"><span class="stack-name">Revit API</span><div class="stack-level"><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot"></div></div></div>
+          <div class="stack-item"><span class="stack-name">IFC / IfcOpenShell</span><div class="stack-level"><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot"></div><div class="level-dot"></div></div></div>
+          <div class="stack-item"><span class="stack-name">Dynamo / BIM</span><div class="stack-level"><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot"></div></div></div>
+          <div class="stack-item"><span class="stack-name">HTML / CSS / JS</span><div class="stack-level"><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot"></div><div class="level-dot"></div></div></div>
+          <div class="stack-item"><span class="stack-name">NBR 5410 / 5419</span><div class="stack-level"><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div><div class="level-dot on"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contato">
+  <div class="wrapper">
+    <div class="section-divider"><span class="section-tag">// contato</span></div>
+    <div class="contact-strip">
+      <div class="contact-main">
+        <h2 class="contact-title">Vamos construir algo juntos?</h2>
+        <p class="contact-sub">Aberto a colaborações em automação BIM, ferramentas web para engenharia, projetos de impacto ou só uma boa troca de ideias técnicas.</p>
+        <div class="contact-links">
+          <a href="https://www.linkedin.com/in/lu%C3%ADsfernand2/" target="_blank" class="btn btn-primary">LinkedIn ↗</a>
+          <a href="https://github.com/luisfernandoeng" target="_blank" class="btn btn-secondary">GitHub ↗</a>
+          <a href="https://github.com/luisfernandoeng/LF_LABS" target="_blank" class="btn btn-secondary">LF LABS ↗</a>
+        </div>
+      </div>
+      <div class="contact-side">
+        <div class="contact-stat"><div class="stat-num">6</div><div class="stat-label">repositórios</div></div>
+        <div class="contact-stat"><div class="stat-num">∞</div><div class="stat-label">horas salvas</div></div>
+        <div class="contact-stat"><div class="stat-num">100%</div><div class="stat-label">open source</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrapper">
+  <div class="footer-left">© 2025 <span>Luís Fernando</span> · Feito com código e engenharia</div>
+  <div class="footer-right">luisfernandoeng · GitHub Pages</div>
+</footer>
+
+<script>
+// ── SCROLL PROGRESS ──
+const scrollBar = document.getElementById('scrollProgress');
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+  scrollBar.style.width = pct + '%';
+});
+
+// ── CURSOR GLOW ──
+const glow = document.getElementById('cursorGlow');
+document.addEventListener('mousemove', e => {
+  glow.style.left = e.clientX + 'px';
+  glow.style.top  = e.clientY + 'px';
+});
+
+// ── CARD MOUSE GRADIENT ──
+document.querySelectorAll('.project-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+    const y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1);
+    card.style.setProperty('--mx', x + '%');
+    card.style.setProperty('--my', y + '%');
+  });
+});
+
+// ── INTERSECTION OBSERVER — card entrance ──
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      const delay = Array.from(entry.target.parentElement.children).indexOf(entry.target) * 80;
+      setTimeout(() => entry.target.classList.add('visible'), delay);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.project-card').forEach(c => observer.observe(c));
+
+// ── GITHUB API — live repo data ──
+const USERNAME = 'luisfernandoeng';
+async function fetchRepoData(repoName) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${USERNAME}/${repoName}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hrs  = Math.floor(mins / 60);
+  const days = Math.floor(hrs / 24);
+  const months = Math.floor(days / 30);
+  if (months > 0) return `atualizado há ${months} ${months === 1 ? 'mês' : 'meses'}`;
+  if (days > 0)   return `atualizado há ${days} ${days === 1 ? 'dia' : 'dias'}`;
+  if (hrs > 0)    return `atualizado há ${hrs}h`;
+  return `atualizado há ${mins}min`;
+}
+
+document.querySelectorAll('.project-card[data-repo]').forEach(async card => {
+  const repo = card.dataset.repo;
+  const data = await fetchRepoData(repo);
+  if (!data) {
+    card.querySelector('.repo-date').textContent = 'ver no GitHub';
+    card.querySelector('.repo-stars').textContent = '0';
+    return;
+  }
+  card.querySelector('.repo-date').textContent    = timeAgo(data.pushed_at || data.updated_at);
+  card.querySelector('.repo-stars').textContent   = data.stargazers_count ?? '0';
+});
+
+// ── CANVAS ANIMATED BACKGROUND ──
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+
+let W, H, particles = [], lines = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// grid dots
+function initParticles() {
+  particles = [];
+  const spacing = 80;
+  for (let x = 0; x < W + spacing; x += spacing) {
+    for (let y = 0; y < H + spacing; y += spacing) {
+      particles.push({
+        bx: x, by: y,
+        x: x + (Math.random() - 0.5) * 20,
+        y: y + (Math.random() - 0.5) * 20,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        r: Math.random() * 1.2 + 0.3,
+        o: Math.random() * 0.4 + 0.1
+      });
+    }
+  }
+}
+initParticles();
+window.addEventListener('resize', initParticles);
+
+// flowing lines (PCB-style right-angle paths)
+function spawnLine() {
+  const startX = Math.random() < 0.5 ? 0 : W;
+  const startY = Math.random() * H;
+  const dir    = startX === 0 ? 1 : -1;
+  lines.push({
+    x: startX, y: startY,
+    segments: [
+      { dx: dir * (80 + Math.random() * 120), dy: 0 },
+      { dx: 0, dy: (Math.random() < 0.5 ? 1 : -1) * (40 + Math.random() * 80) },
+      { dx: dir * (60 + Math.random() * 100), dy: 0 }
+    ],
+    seg: 0, t: 0, speed: 0.008 + Math.random() * 0.012,
+    alpha: 0, fadeIn: true,
+    drawn: []
+  });
+}
+
+for (let i = 0; i < 5; i++) spawnLine();
+setInterval(() => { if (lines.length < 8) spawnLine(); }, 1800);
+
+function drawLine(line) {
+  if (line.seg >= line.segments.length) return;
+  const seg = line.segments[line.seg];
+  line.t += line.speed;
+  if (line.t >= 1) { line.t = 0; line.drawn.push(seg); line.seg++; }
+
+  ctx.save();
+  ctx.strokeStyle = `rgba(245,197,24,${line.alpha * 0.35})`;
+  ctx.lineWidth = 1;
+  ctx.shadowColor = 'rgba(245,197,24,0.6)';
+  ctx.shadowBlur  = 4;
+  ctx.beginPath();
+
+  let cx = line.x, cy = line.y;
+  for (const s of line.drawn) { ctx.moveTo(cx, cy); cx += s.dx; cy += s.dy; ctx.lineTo(cx, cy); }
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + seg.dx * line.t, cy + seg.dy * line.t);
+  ctx.stroke();
+
+  // dot at head
+  const hx = cx + seg.dx * line.t, hy = cy + seg.dy * line.t;
+  ctx.beginPath();
+  ctx.arc(hx, hy, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(245,197,24,${line.alpha * 0.8})`;
+  ctx.shadowBlur = 8;
+  ctx.fill();
+  ctx.restore();
+
+  if (line.fadeIn) { line.alpha = Math.min(1, line.alpha + 0.04); if (line.alpha >= 1) line.fadeIn = false; }
+}
+
+let frame = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  ctx.clearRect(0, 0, W, H);
+
+  // dots
+  for (const p of particles) {
+    p.x += p.vx; p.y += p.vy;
+    if (Math.abs(p.x - p.bx) > 15) p.vx *= -1;
+    if (Math.abs(p.y - p.by) > 15) p.vy *= -1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(42,51,64,${p.o})`;
+    ctx.fill();
+  }
+
+  // lines
+  lines = lines.filter(l => {
+    if (l.seg >= l.segments.length) {
+      l.alpha -= 0.015;
+      if (l.alpha <= 0) return false;
+      // draw full faded line
+      ctx.save();
+      ctx.strokeStyle = `rgba(245,197,24,${l.alpha * 0.25})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      let cx = l.x, cy = l.y;
+      for (const s of l.drawn) { ctx.moveTo(cx,cy); cx+=s.dx; cy+=s.dy; ctx.lineTo(cx,cy); }
+      ctx.stroke();
+      ctx.restore();
+    } else { drawLine(l); }
+    return true;
+  });
+
+  frame++;
+}
+animate();
+</script>
+</body>
+</html>
